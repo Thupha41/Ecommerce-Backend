@@ -15,9 +15,13 @@ var KeyTokenSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    refreshToken: {
+    refreshTokensUsed: {
       type: Array,
-      default: [],
+      default: [], //nhung RF da dc su dung
+    },
+    refreshToken: {
+      type: String,
+      required: true,
     },
   },
   {

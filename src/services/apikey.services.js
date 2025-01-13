@@ -1,16 +1,18 @@
 "use strict";
 import crypto from "crypto";
 import apikeyModels from "../models/apikey.models";
-
+import { NotFoundError } from "../core/error.response";
+import { OK } from "../core/success.response";
 class ApiKeyService {
   static findById = async (key) => {
-    // const newKey = await apikeyModels.create({
-    //   key: crypto.randomBytes(64).toString("hex"),
-    //   permissions: ["0000"],
-    // });
-    console.log(newKey);
     const objKey = await apikeyModels.findOne({ key, status: true }).lean();
-    return objKey;
+    if (!objKey) {
+      throw new NotFoundError("API key not found");
+    }
+    return new OK({
+      message: "API key found",
+      metadata: objKey,
+    });
   };
 }
 
