@@ -1,13 +1,14 @@
 import shopModels from "../models/shop.models";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
+import crypto, { verify } from "crypto";
 import KeyTokenService from "./keyToken.services";
-import { createTokenPair } from "../utils/authUtils";
+import { createTokenPair, verifyJWT } from "../utils/authUtils";
 import { getInfoData } from "../utils/index";
 import {
   BadRequestError,
   ConflictRequestError,
   AuthFailureError,
+  ForbiddenRequestError,
 } from "../core/error.response";
 import { findByEmail } from "./shop.services";
 
@@ -128,6 +129,63 @@ class AccessService {
   static logout = async (keyStore) => {
     const delKey = await KeyTokenService.removeTokenById(keyStore._id);
     return delKey;
+  };
+
+  /*
+    check token used
+  */
+  static handleRefreshToken = async (refreshToken) => {
+    //check xem token da duoc su dung chua
+    const foundToken = await KeyTokenService.findByRefreshTokenUsed(
+      refreshToken
+    );
+    if (foundToken) {
+      //decode
+      const { userId, email } = await verifyJWT(
+        refreshToken,
+        foundToken.privateKey
+      );
+      console.log({ userId, email });
+      // delete: xoa tat ca token trong keystore
+      await KeyTokenService.deleteKeyById();
+      throw new ForbiddenRequestError(
+        "Error: Something wrong happened! Please re-login"
+      );
+    }
+
+    //No
+    const holderToken = KeyTokenService.findByRefreshToken(refreshToken);
+    if (!holderToken) throw new AuthFailureError("Error: Shop not registered");
+
+    //verifyToken
+    const { userId, email } = await verifyJWT(
+      refreshToken,
+      holderToken.privateKey
+    );
+    console.log(">>> 2", { userId, email });
+    //check user id
+    const foundShop = await findByEmail({ email });
+    if (!foundShop) throw new AuthFailureError("Error: Shop not registered");
+    const tokens = await createTokenPair(
+      { userId, email },
+      holderToken.publicKey,
+      holderToken.privateKey
+    );
+
+    //update token
+    await holderToken.update({
+      $set: {
+        refreshToken: tokens.refreshToken,
+      },
+      $addToSet: {
+        refreshTokenUsed: refreshToken, //da duoc su dung de lay token moi
+      },
+    });
+
+    return {
+      user: { userId, email },
+      tokens,
+    };
   };
 }
 

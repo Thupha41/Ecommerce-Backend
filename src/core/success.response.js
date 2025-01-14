@@ -47,7 +47,7 @@ class NO_CONTENT extends SuccessResponse {
   }
 }
 
-module.exports = {
+export default {
   OK,
   CREATED,
   NO_CONTENT,
