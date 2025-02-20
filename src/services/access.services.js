@@ -1,16 +1,16 @@
-import shopModels from "../models/shop.models";
+import shopModels from "../models/shop.models.js";
 import bcrypt from "bcrypt";
 import crypto, { verify } from "crypto";
-import KeyTokenService from "./keyToken.services";
-import { createTokenPair, verifyJWT } from "../utils/authUtils";
-import { getInfoData } from "../utils/index";
+import KeyTokenService from "./keyToken.services.js";
+import { createTokenPair, verifyJWT } from "../utils/authUtils.js";
+import { getInfoData } from "../utils/index.js";
 import {
   BadRequestError,
   ConflictRequestError,
   AuthFailureError,
   ForbiddenRequestError,
-} from "../core/error.response";
-import { findByEmail } from "./shop.services";
+} from "../core/error.response.js";
+import { findByEmail } from "./shop.services.js";
 
 const RoleShop = {
   SHOP: "SHOP",

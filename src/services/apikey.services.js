@@ -1,8 +1,8 @@
 "use strict";
 import crypto from "crypto";
-import apikeyModels from "../models/apikey.models";
-import { NotFoundError } from "../core/error.response";
-import { OK } from "../core/success.response";
+import apikeyModels from "../models/apikey.models.js";
+import { NotFoundError } from "../core/error.response.js";
+import { OK } from "../core/success.response.js";
 class ApiKeyService {
   static findById = async (key) => {
     const objKey = await apikeyModels.findOne({ key, status: true }).lean();

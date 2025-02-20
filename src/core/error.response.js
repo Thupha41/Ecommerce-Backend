@@ -1,6 +1,6 @@
 "use strict";
 
-import { StatusCodes, ReasonPhrases } from "../utils/httpStatusCode";
+import { StatusCodes, ReasonPhrases } from "../utils/httpStatusCode.js";
 
 class ErrorResponse extends Error {
   constructor(message, status) {
@@ -51,7 +51,7 @@ class AuthFailureError extends ErrorResponse {
   }
 }
 
-export default {
+export {
   ConflictRequestError,
   ForbiddenRequestError,
   BadRequestError,

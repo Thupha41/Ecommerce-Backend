@@ -1,11 +1,9 @@
 "use strict";
-import {
-  product,
-  clothing,
-  electronic,
-  furniture,
-} from "../models/product.models";
-import { BadRequestError } from "../core/error.response";
+import models from "../models/product.models.js";
+
+const { product, clothing, electronic, furniture } = models;
+
+import { BadRequestError } from "../core/error.response.js";
 //define Factory class to create product
 
 class ProductFactory {

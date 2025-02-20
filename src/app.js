@@ -2,7 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import helmet from "helmet";
 import compression from "compression";
-
+import router from "./routes/index.js";
 const app = express();
 
 //init middleware
@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
     metadata: str.repeat(1000),
   });
 });
+app.use(router);
 //handle error
 app.use((error, req, res, next) => {
   const statusCode = error.status || 500;

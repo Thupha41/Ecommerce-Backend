@@ -1,6 +1,6 @@
 "use strict";
 
-import { StatusCodes, ReasonPhrases } from "../utils/httpStatusCode";
+import { StatusCodes, ReasonPhrases } from "../utils/httpStatusCode.js";
 
 class SuccessResponse {
   constructor({
@@ -47,8 +47,4 @@ class NO_CONTENT extends SuccessResponse {
   }
 }
 
-export default {
-  OK,
-  CREATED,
-  NO_CONTENT,
-};
+export { OK, CREATED, NO_CONTENT };

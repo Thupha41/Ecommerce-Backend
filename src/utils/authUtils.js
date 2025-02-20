@@ -1,8 +1,8 @@
 "use strict";
 import JWT from "jsonwebtoken";
-import asyncHandler from "./asyncHandlers";
-import { AuthFailureError, NotFoundError } from "../core/error.response";
-import KeyTokenService from "../services/keyToken.services";
+import asyncHandler from "./asyncHandlers.js";
+import { AuthFailureError, NotFoundError } from "../core/error.response.js";
+import KeyTokenService from "../services/keyToken.services.js";
 const HEADER = {
   API_KEY: "x-api-key",
   CLIENT_ID: "x-client-id",

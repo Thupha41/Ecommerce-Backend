@@ -1,7 +1,7 @@
 "use strict";
 
-import keytokenModels from "../models/keytoken.models";
-import { BadRequestError } from "../core/error.response";
+import keytokenModels from "../models/keytoken.models.js";
+import { BadRequestError } from "../core/error.response.js";
 import { Types } from "mongoose";
 class KeyTokenService {
   static createKeyToken = async ({

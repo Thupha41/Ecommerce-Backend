@@ -1,5 +1,5 @@
 "use strict";
-import ApiKeyService from "../services/apikey.services";
+import ApiKeyService from "../services/apikey.services.js";
 const HEADER = {
   API_KEY: "x-api-key",
   AUTHORIZATION: "authorization",

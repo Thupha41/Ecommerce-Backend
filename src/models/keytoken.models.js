@@ -1,6 +1,6 @@
 "use strict";
 
-import { Schema, model } from "mongoose"; // Erase if already required
+import mongoose, { Schema, model } from "mongoose"; // Erase if already required
 const DOCUMENT_NAME = "Key";
 const COLLECTION_NAME = "Keys";
 // Declare the Schema of the Mongo model

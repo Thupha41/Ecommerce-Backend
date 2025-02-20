@@ -1,4 +1,4 @@
-import shopModels from "../models/shop.models";
+import shopModels from "../models/shop.models.js";
 
 export const findByEmail = async ({
   email,

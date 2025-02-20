@@ -1,7 +1,7 @@
 import { Router } from "express";
-import accessControllers from "../../controllers/access.controllers";
-import asyncHandler from "../../utils/asyncHandlers";
-import { authentication } from "../../utils/authUtils";
+import accessControllers from "../../controllers/access.controllers.js";
+import asyncHandler from "../../utils/asyncHandlers.js";
+import { authentication } from "../../utils/authUtils.js";
 const accessRouter = Router();
 
 accessRouter.post("/shop/signup", asyncHandler(accessControllers.signUp));

@@ -1,5 +1,5 @@
-import AccessService from "../services/access.services";
-import { CREATED, OK } from "../core/success.response";
+import AccessService from "../services/access.services.js";
+import { CREATED, OK } from "../core/success.response.js";
 class AccessController {
   login = async (req, res, next) => {
     return new OK({
