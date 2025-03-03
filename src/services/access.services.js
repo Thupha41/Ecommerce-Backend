@@ -22,7 +22,7 @@ class AccessService {
   static signUp = async ({ name, email, password }) => {
     // check email exist
     const holderShop = await shopModels.findOne({ email }).lean();
-    if (!holderShop) {
+    if (holderShop) {
       throw new BadRequestError("Error: Shop already registered!");
     }
 
@@ -38,30 +38,38 @@ class AccessService {
       throw new BadRequestError("Shop creation failed");
     }
 
-    const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
-      modulusLength: 4096,
-      publicKeyEncoding: {
-        type: "pkcs1",
-        format: "pem",
-      },
-      privateKeyEncoding: {
-        type: "pkcs8",
-        format: "pem",
-      },
-    });
+    // const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
+    //   modulusLength: 4096,
+    //   publicKeyEncoding: {
+    //     type: "pkcs1",
+    //     format: "pem",
+    //   },
+    //   privateKeyEncoding: {
+    //     type: "pkcs8",
+    //     format: "pem",
+    //   },
+    // });
 
-    const publicKeyString = await KeyTokenService.createKeyToken({
+    const privateKey = crypto.randomBytes(64).toString("hex");
+    const publicKey = crypto.randomBytes(64).toString("hex");
+
+    console.log({ privateKey, publicKey });
+
+    const keyStore = await KeyTokenService.createKeyToken({
       userId: newShop._id,
       publicKey,
+      privateKey,
     });
 
-    if (!publicKeyString) {
-      throw new BadRequestError("Error: Public key string error");
+    console.log(">>> check keystore", keyStore);
+
+    if (!keyStore) {
+      throw new BadRequestError("Bad Request Error: Public key string error");
     }
 
     const tokens = await createTokenPair(
       { userId: newShop._id, email },
-      publicKeyString,
+      publicKey,
       privateKey
     );
 
@@ -87,21 +95,12 @@ class AccessService {
 
     //2
     const isPassMatch = await bcrypt.compare(password, foundShop.password);
-    if (!isPassMatch) throw new AuthFailureError("Error: Wrong password!");
+    if (!isPassMatch) throw new AuthFailureError("Auth Error: Wrong password!");
 
     //3
 
-    const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
-      modulusLength: 4096,
-      publicKeyEncoding: {
-        type: "pkcs1",
-        format: "pem",
-      },
-      privateKeyEncoding: {
-        type: "pkcs8",
-        format: "pem",
-      },
-    });
+    const privateKey = crypto.randomBytes(64).toString("hex");
+    const publicKey = crypto.randomBytes(64).toString("hex");
 
     //4
     const { _id: userId } = foundShop;
@@ -132,53 +131,66 @@ class AccessService {
   };
 
   /*
-    check token used
+    1. check token reused before -> If yes -> Revoke
+    2. check RT exists
+    3. Verify token and check who is using it
+    4. Check if user exist before issue new tokens
+    5. Create new pair of tokens
   */
   static handleRefreshToken = async (refreshToken) => {
-    //check xem token da duoc su dung chua
+    console.log("Checking refresh token:", refreshToken);
+    //1️⃣ Check if the refresh token was previously used
     const foundToken = await KeyTokenService.findByRefreshTokenUsed(
       refreshToken
     );
+    console.log("Found used token:", foundToken);
+
     if (foundToken) {
-      //decode
+      //Decode token to get user details
       const { userId, email } = await verifyJWT(
         refreshToken,
         foundToken.privateKey
       );
       console.log({ userId, email });
-      // delete: xoa tat ca token trong keystore
-      await KeyTokenService.deleteKeyById();
+      // Immediately revoke all tokens for the user
+      console.log("Deleting tokens for userId:", userId);
+      const deleteResult = await KeyTokenService.deleteKeyById(userId);
+      console.log("Delete result:", deleteResult);
       throw new ForbiddenRequestError(
         "Error: Something wrong happened! Please re-login"
       );
     }
 
-    //No
-    const holderToken = KeyTokenService.findByRefreshToken(refreshToken);
+    // 2️⃣ Check if refresh token exists
+    const holderToken = await KeyTokenService.findByRefreshToken(refreshToken);
     if (!holderToken) throw new AuthFailureError("Error: Shop not registered");
 
-    //verifyToken
+    // 3️⃣ Verify the token
+    console.log("============START============");
     const { userId, email } = await verifyJWT(
       refreshToken,
       holderToken.privateKey
     );
+    console.log("============END============");
     console.log(">>> 2", { userId, email });
-    //check user id
+    // 4️⃣ Verify the user exists before issuing new pair of tokens
     const foundShop = await findByEmail({ email });
     if (!foundShop) throw new AuthFailureError("Error: Shop not registered");
+
+    // 5️⃣ Generate new token pair
     const tokens = await createTokenPair(
       { userId, email },
       holderToken.publicKey,
       holderToken.privateKey
     );
 
-    //update token
-    await holderToken.update({
+    //6️⃣Update the refresh token in the database
+    await KeyTokenService.findByIdAndUpdate(holderToken._id, {
       $set: {
         refreshToken: tokens.refreshToken,
       },
       $addToSet: {
-        refreshTokenUsed: refreshToken, //da duoc su dung de lay token moi
+        refreshTokensUsed: refreshToken, // Store old token to detect reuse
       },
     });
 
@@ -191,7 +203,7 @@ class AccessService {
   static handleRefreshTokenV2 = async ({ user, refreshToken, keyStore }) => {
     const { userId, email } = user;
 
-    if (keyStore.refreshTokenUsed.includes(refreshToken)) {
+    if (keyStore.refreshTokensUsed.includes(refreshToken)) {
       await KeyTokenService.deleteKeyById(userId);
       throw new ForbiddenRequestError(
         "Error: Something wrong happened! Please re-login"
@@ -213,12 +225,12 @@ class AccessService {
     );
 
     //update token
-    await keyStore.update({
+    await KeyTokenService.findByIdAndUpdate(keyStore._id, {
       $set: {
         refreshToken: tokens.refreshToken,
       },
       $addToSet: {
-        refreshTokenUsed: refreshToken, //da duoc su dung de lay token moi
+        refreshTokensUsed: refreshToken, // Store old token to detect reuse
       },
     });
 

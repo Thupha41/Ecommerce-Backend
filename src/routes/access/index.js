@@ -4,15 +4,15 @@ import asyncHandler from "../../utils/asyncHandlers.js";
 import { authentication } from "../../utils/authUtils.js";
 const accessRouter = Router();
 
-accessRouter.post("/shop/signup", asyncHandler(accessControllers.signUp));
-accessRouter.post("/shop/login", asyncHandler(accessControllers.login));
+accessRouter.post("/signup", asyncHandler(accessControllers.signUp));
+accessRouter.post("/login", asyncHandler(accessControllers.login));
 
 //authentication
 accessRouter.use(authentication);
 
-accessRouter.post("/shop/logout", asyncHandler(accessControllers.logout));
+accessRouter.post("/logout", asyncHandler(accessControllers.logout));
 accessRouter.post(
-  "/shop/handleRefreshToken",
+  "/handleRefreshToken",
   asyncHandler(accessControllers.handleRefreshToken)
 );
 

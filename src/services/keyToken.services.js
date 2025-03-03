@@ -3,6 +3,7 @@
 import keytokenModels from "../models/keytoken.models.js";
 import { BadRequestError } from "../core/error.response.js";
 import { Types } from "mongoose";
+
 class KeyTokenService {
   static createKeyToken = async ({
     userId,
@@ -25,17 +26,23 @@ class KeyTokenService {
 
     //lv1
     try {
-      const filter = { user: userId },
-        update = { publicKey, privateKey, refreshTokensUsed: [], refreshToken },
-        options = {
-          upsert: true,
-          new: true,
-        };
-      const tokens = await keytokenModels.findOneAndUpdate({
+      const filter = { user: userId };
+      const update = {
+        publicKey,
+        privateKey,
+        refreshTokensUsed: [],
+        refreshToken,
+      };
+      const options = {
+        upsert: true,
+        new: true,
+      };
+
+      const tokens = await keytokenModels.findOneAndUpdate(
         filter,
         update,
-        options,
-      });
+        options
+      );
 
       return tokens ? tokens.publicKey : null;
     } catch (error) {
@@ -44,7 +51,7 @@ class KeyTokenService {
   };
 
   static findByUserId = async (userId) => {
-    return await keytokenModels.findOne({ user: Types.ObjectId(userId) });
+    return await keytokenModels.findOne({ user: new Types.ObjectId(userId) });
   };
 
   static removeTokenById = async ({ id }) => {
@@ -57,20 +64,28 @@ class KeyTokenService {
   static findByRefreshTokenUsed = async (refreshToken) => {
     return await keytokenModels
       .findOne({
-        refreshTokenUsed: refreshToken,
+        refreshTokensUsed: refreshToken,
       })
       .lean();
   };
 
   static findByRefreshToken = async (refreshToken) => {
-    return await keytokenModels.findOne({
-      refreshToken,
-    });
+    return await keytokenModels
+      .findOne({
+        refreshToken,
+      })
+      .lean();
   };
 
   static deleteKeyById = async (userId) => {
-    return await keytokenModels.findByIdAndDelete({
-      user: userId,
+    return await keytokenModels.findOneAndDelete({
+      user: new Types.ObjectId(userId),
+    });
+  };
+
+  static findByIdAndUpdate = async (id, update) => {
+    return await keytokenModels.findByIdAndUpdate(id, update, {
+      new: true,
     });
   };
 }

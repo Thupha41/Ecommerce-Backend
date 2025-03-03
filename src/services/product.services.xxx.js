@@ -4,6 +4,19 @@ import models from "../models/product.models.js";
 const { product, clothing, electronic, furniture } = models;
 
 import { BadRequestError } from "../core/error.response.js";
+
+import {
+  findDrafts,
+  publishProduct,
+  findPublished,
+  unPublishProduct,
+  searchProduct,
+  findAll,
+  findOne,
+  updateProductById,
+  removeNullOrUndefinedV2,
+  updateNestedObjectParser,
+} from "../models/repositories/product.repo.js";
 //define Factory class to create product
 
 class ProductFactory {
@@ -23,6 +36,73 @@ class ProductFactory {
 
     return new productClass(payload).createProduct();
   }
+
+  static async updateProduct(type, productId, payload) {
+    const productClass = ProductFactory.productRegistry[type];
+    if (!productClass)
+      throw new BadRequestError(`Invalid Product Types ${type}`);
+
+    return new productClass(payload).updateProduct(productId);
+  }
+
+  /// QUERY
+
+  //find all drafts' for shop
+  static findAllDraftsForShop = async ({
+    product_shop,
+    limit = 50,
+    skip = 0,
+  }) => {
+    const query = { product_shop, isDraft: true };
+    return await findDrafts({ query, limit, skip });
+  };
+
+  //find all published products for shop
+  static findAllPublishedForShop = async ({
+    product_shop,
+    limit = 50,
+    skip = 0,
+  }) => {
+    const query = { product_shop, isPublished: true };
+    return await findPublished({ query, limit, skip });
+  };
+
+  static searchProductByUser = async ({ keySearch }) => {
+    return await searchProduct({ keySearch });
+  };
+
+  static findAllProducts = async ({
+    limit = 50,
+    sort = "ctime",
+    page = 1,
+    filter = { isPublished: true },
+  }) => {
+    return await findAll({
+      limit,
+      sort,
+      page,
+      filter,
+      select: ["product_name", "product_description", "product_price"],
+    });
+  };
+
+  static findOneProduct = async ({ product_id }) => {
+    return await findOne({
+      product_id,
+      unSelect: ["__v", "product_variations"],
+    });
+  };
+  /// END QUERY
+
+  //PUT
+  static publishProductByShop = async ({ product_shop, product_id }) => {
+    return await publishProduct({ product_shop, product_id });
+  };
+
+  static unPublishProductByShop = async ({ product_shop, product_id }) => {
+    return await unPublishProduct({ product_shop, product_id });
+  };
+  //END PUT
 }
 
 //define base product class
@@ -50,17 +130,63 @@ class Product {
   async createProduct(product_id) {
     return await product.create({ ...this, _id: product_id });
   }
+
+  async updateProduct(productId, bodyUpdate) {
+    return await updateProductById({
+      productId,
+      bodyUpdate,
+      model: product,
+    });
+  }
 }
 
 //define sub-class for different product type Clothing
 class Clothing extends Product {
   async createProduct() {
-    const newClothing = await clothing.create(this.product_attributes);
+    const newClothing = await clothing.create({
+      ...this.product_attributes,
+      product_shop: this.product_shop,
+    });
     if (!newClothing) throw new BadRequestError("Create new clothing error");
-    const newProduct = await super.createProduct();
+    const newProduct = await super.createProduct(newClothing._id);
     if (!newProduct) throw new BadRequestError("Create new product error");
 
     return newProduct;
+  }
+
+  async updateProduct(productId) {
+    /*
+      {
+        a: undefined, 
+        b: null
+      } 
+      //1. remove attribute has null / undefined
+      //2 check where to update
+    */
+    //1
+    console.log(`[1]`, this);
+    const objectParams = removeNullOrUndefinedV2(this);
+    console.log(`[2]`, objectParams);
+    //2
+    if (objectParams.product_attributes) {
+      //update child
+      await updateProductById({
+        productId,
+        bodyUpdate: {
+          product_attributes: updateNestedObjectParser(
+            objectParams.product_attributes
+          ),
+        },
+        model: clothing,
+      });
+    }
+
+    const updateProduct = await super.updateProduct(
+      productId,
+      updateNestedObjectParser(objectParams)
+    );
+
+    return updateProduct;
   }
 }
 
