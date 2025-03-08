@@ -1,5 +1,10 @@
 "use strict";
 import _ from "lodash";
+import { Types } from "mongoose";
+
+export const convertToObjectIdMongodb = (id) => {
+  return new Types.ObjectId(id);
+};
 
 export const getInfoData = ({ field = [], object = {} }) => {
   return _.pick(object, field);
