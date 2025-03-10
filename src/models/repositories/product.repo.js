@@ -3,7 +3,11 @@
 import models from "../product.models.js";
 
 const { product, clothing, electronic, furniture } = models;
-import { getSelectData, getUnSelectData } from "../../utils/index.js";
+import {
+  convertToObjectIdMongodb,
+  getSelectData,
+  getUnSelectData,
+} from "../../utils/index.js";
 import { Types } from "mongoose";
 
 const findDrafts = async ({ query, limit, skip }) => {
@@ -149,6 +153,12 @@ const updateNestedObjectParser = (obj) => {
   return final;
 };
 
+const getProductById = async (productId) => {
+  return await product.findOne({
+    _id: convertToObjectIdMongodb(productId),
+  });
+};
+
 export {
   findDrafts,
   publishProduct,
@@ -161,4 +171,5 @@ export {
   removeNullOrUndefinedV1,
   removeNullOrUndefinedV2,
   updateNestedObjectParser,
+  getProductById,
 };
